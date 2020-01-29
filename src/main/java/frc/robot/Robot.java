@@ -8,7 +8,10 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.PWMSpeedController;
+import edu.wpi.first.wpilibj.PWMTalonFX;
 import edu.wpi.first.wpilibj.PWMTalonSRX;
+import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
@@ -26,16 +29,13 @@ import frc.robot.BallTargetVisionPipeline;
  * Runs the motors with arcade steering.
  */
 public class Robot extends TimedRobot {
-  private final PWMTalonSRX m_leftTalon1 = new PWMTalonSRX(0);
-  private final PWMTalonSRX m_leftTalon2 = new PWMTalonSRX(1);
-  private final PWMTalonSRX m_rightTalon1 = new PWMTalonSRX(8);
-  private final PWMTalonSRX m_rightTalon2 = new PWMTalonSRX(9);
-  private final SpeedControllerGroup leftSpeedControllerGroup = new SpeedControllerGroup(m_leftTalon1, m_leftTalon2);
-  private final SpeedControllerGroup rightSpeedControllerGroup = new SpeedControllerGroup(m_rightTalon1, m_rightTalon2);
-  private final DifferentialDrive m_robotDrive = new DifferentialDrive(leftSpeedControllerGroup, rightSpeedControllerGroup);
+  private final Spark m_leftSpark = new Spark(0);
+  private final Spark m_rightSpark = new Spark(1);
+  private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftSpark, m_rightSpark);
   private final Joystick m_stick = new Joystick(0);
+  //Pprivate final Joystick m_stick1 = new Joystick(1);
 
-  private static final int IMG_WIDTH = 320;
+  /*private static final int IMG_WIDTH = 320;
   private static final int IMG_HEIGHT = 240;
 
   private VisionThread visionThread;
@@ -58,19 +58,28 @@ public class Robot extends TimedRobot {
     });
     visionThread.start();
     super.robotInit();
-  }
+  }*/
+
+  //private boolean isAuto = false;
 
   @Override
   public void teleopPeriodic() {
+    /*if (m_stick.getTriggerReleased()) {
+      isAuto = false;
+    }
     if (m_stick.getTriggerPressed()) {
-      double centerX;
+      isAuto = true;
+    }
+    if (isAuto) {*/
+      /*double centerX;
       synchronized (imgLock) {
           centerX = this.centerX;
       }
       double turn = centerX - (IMG_WIDTH / 2);
-      m_robotDrive.arcadeDrive(0.6, turn * 0.005);
-    } else {
-      m_robotDrive.arcadeDrive(0, 0);
-    }
+      m_robotDrive.arcadeDrive(0, turn * 0.005);*/
+      //m_robotDrive.arcadeDrive(0, 0.5);
+    //} else {
+      m_robotDrive.arcadeDrive(-m_stick.getY(), m_stick.getX());
+    //}
   }
 }
