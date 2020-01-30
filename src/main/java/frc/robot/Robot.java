@@ -50,6 +50,7 @@ public class Robot extends TimedRobot {
         }
     });
     visionThread.start();
+    m_robotDrive.setSafetyEnabled(false); // May not compile - edited without syntax highlighting or code completion.
     super.robotInit();
   }
 
