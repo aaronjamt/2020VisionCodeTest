@@ -7,22 +7,16 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.PWMSpeedController;
-import edu.wpi.first.wpilibj.PWMTalonFX;
-import edu.wpi.first.wpilibj.PWMTalonSRX;
-import edu.wpi.first.wpilibj.Spark;
-import edu.wpi.first.wpilibj.SpeedControllerGroup;
-import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-
 import org.opencv.core.Rect;
 import org.opencv.imgproc.Imgproc;
 
 import edu.wpi.cscore.UsbCamera;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.vision.VisionThread;
-import frc.robot.BallTargetVisionPipeline;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
 /**
  * This is a demo program showing the use of the DifferentialDrive class.
@@ -33,9 +27,8 @@ public class Robot extends TimedRobot {
   private final Spark m_rightSpark = new Spark(1);
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftSpark, m_rightSpark);
   private final Joystick m_stick = new Joystick(0);
-  //Pprivate final Joystick m_stick1 = new Joystick(1);
 
-  /*private static final int IMG_WIDTH = 320;
+  private static final int IMG_WIDTH = 320;
   private static final int IMG_HEIGHT = 240;
 
   private VisionThread visionThread;
@@ -58,28 +51,40 @@ public class Robot extends TimedRobot {
     });
     visionThread.start();
     super.robotInit();
-  }*/
+  }
 
-  //private boolean isAuto = false;
+  private boolean isAuto = false;
+  private long lastAutoMillis = 0;
 
   @Override
   public void teleopPeriodic() {
-    /*if (m_stick.getTriggerReleased()) {
+    if (m_stick.getTriggerReleased()) {
       isAuto = false;
     }
     if (m_stick.getTriggerPressed()) {
       isAuto = true;
     }
-    if (isAuto) {*/
-      /*double centerX;
+    if (isAuto) {
+      double centerX;
       synchronized (imgLock) {
           centerX = this.centerX;
       }
       double turn = centerX - (IMG_WIDTH / 2);
-      m_robotDrive.arcadeDrive(0, turn * 0.005);*/
-      //m_robotDrive.arcadeDrive(0, 0.5);
-    //} else {
-      m_robotDrive.arcadeDrive(-m_stick.getY(), m_stick.getX());
-    //}
+      turn *= 0.005;
+      long curMillis = System.currentTimeMillis();
+      if (lastAutoMillis > 0) {
+        long timeSinceLast = lastAutoMillis - curMillis;
+        if (timeSinceLast > 0) {
+          turn /= (timeSinceLast / 10);
+          m_robotDrive.arcadeDrive(0, turn);
+        }
+      } else {
+        m_robotDrive.arcadeDrive(0, 0);
+      }
+      lastAutoMillis = curMillis;
+    } else {
+      lastAutoMillis = 0;
+      m_robotDrive.arcadeDrive(m_stick.getY(), m_stick.getX());
+    }
   }
 }
