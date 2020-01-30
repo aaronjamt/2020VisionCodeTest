@@ -50,7 +50,7 @@ public class Robot extends TimedRobot {
         }
     });
     visionThread.start();
-    m_robotDrive.setSafetyEnabled(false); // May not compile - edited without syntax highlighting or code completion.
+    m_robotDrive.setSafetyEnabled(false);
     super.robotInit();
   }
 
@@ -77,9 +77,15 @@ public class Robot extends TimedRobot {
         long timeSinceLast = lastAutoMillis - curMillis;
         if (timeSinceLast > 0) {
           turn /= (timeSinceLast / 10);
+          System.out.print("Auto enabled; turn speed: ");
+          System.out.print(turn);
+          System.out.print("; timeSinceLast: ");
+          System.out.println(timeSinceLast);
           m_robotDrive.arcadeDrive(0, turn);
         }
       } else {
+        System.out.print("Auto enabled but lastAutoMillis=");
+        System.out.println(lastAutoMillis);
         m_robotDrive.arcadeDrive(0, 0);
       }
       lastAutoMillis = curMillis;
