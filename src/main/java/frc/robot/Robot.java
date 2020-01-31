@@ -28,11 +28,11 @@ public class Robot extends TimedRobot {
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftSpark, m_rightSpark);
   private final Joystick m_stick = new Joystick(0);
 
-  private static final int IMG_WIDTH = 320;
-  private static final int IMG_HEIGHT = 240;
+  private static final int IMG_WIDTH = 160;
+  private static final int IMG_HEIGHT = 120;
 
   private VisionThread visionThread;
-  private double centerX = 0.0;
+  private double centerX = 1024.0;
 
   private final Object imgLock = new Object();
 
@@ -42,56 +42,50 @@ public class Robot extends TimedRobot {
     camera.setResolution(IMG_WIDTH, IMG_HEIGHT);
 
     visionThread = new VisionThread(camera, new BallTargetVisionPipeline(), pipeline -> {
-        if (!pipeline.filterContoursOutput().isEmpty()) {
-            Rect r = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0));
-            synchronized (imgLock) {
-                centerX = r.x + (r.width / 2);
-            }
+      if (!pipeline.filterContoursOutput().isEmpty()) {
+        Rect r = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0));
+        synchronized (imgLock) {
+            centerX = r.x + (r.width / 2);
         }
+      } else {
+        synchronized (imgLock) {
+          centerX = 1024;
+        }
+      }
     });
     visionThread.start();
     m_robotDrive.setSafetyEnabled(false);
     super.robotInit();
   }
 
-  private boolean isAuto = false;
-  private long lastAutoMillis = 0;
-
+  @Override
+  public void autonomousPeriodic() {
+    double centerX;
+    synchronized (imgLock) {
+        centerX = this.centerX;
+    }
+    System.out.println(centerX);
+    if (centerX == 1024) {
+      m_robotDrive.arcadeDrive(0, 0.5);
+    } else {
+      double turn = centerX - (IMG_WIDTH / 2);
+      turn *= 0.004;
+      if (Math.abs(turn) <= 0.07) {
+        turn = 0;
+      } else if (turn < 0 && turn >= -0.5) {
+        turn = -0.5;
+      } else if (turn <= 0.5) {
+        turn = 0.5;
+      }
+      m_robotDrive.arcadeDrive(0, turn);
+    }
+  }
+  
   @Override
   public void teleopPeriodic() {
-    if (m_stick.getTriggerReleased()) {
-      isAuto = false;
+    synchronized (imgLock) {
+      System.out.println(this.centerX);
     }
-    if (m_stick.getTriggerPressed()) {
-      isAuto = true;
-    }
-    if (isAuto) {
-      double centerX;
-      synchronized (imgLock) {
-          centerX = this.centerX;
-      }
-      double turn = centerX - (IMG_WIDTH / 2);
-      turn *= 0.005;
-      long curMillis = System.currentTimeMillis();
-      if (lastAutoMillis > 0) {
-        long timeSinceLast = lastAutoMillis - curMillis;
-        if (timeSinceLast > 0) {
-          turn /= (timeSinceLast / 10);
-          System.out.print("Auto enabled; turn speed: ");
-          System.out.print(turn);
-          System.out.print("; timeSinceLast: ");
-          System.out.println(timeSinceLast);
-          m_robotDrive.arcadeDrive(0, turn);
-        }
-      } else {
-        System.out.print("Auto enabled but lastAutoMillis=");
-        System.out.println(lastAutoMillis);
-        m_robotDrive.arcadeDrive(0, 0);
-      }
-      lastAutoMillis = curMillis;
-    } else {
-      lastAutoMillis = 0;
-      m_robotDrive.arcadeDrive(m_stick.getY(), m_stick.getX());
-    }
+    m_robotDrive.arcadeDrive(m_stick.getY(), m_stick.getX());
   }
 }
