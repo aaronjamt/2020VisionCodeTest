@@ -40,6 +40,7 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     UsbCamera camera = CameraServer.getInstance().startAutomaticCapture();
     camera.setResolution(IMG_WIDTH, IMG_HEIGHT);
+    camera.setExposureManual(20);
 
     visionThread = new VisionThread(camera, new BallTargetVisionPipeline(), pipeline -> {
       if (!pipeline.filterContoursOutput().isEmpty()) {
