@@ -55,7 +55,7 @@ public class Robot extends TimedRobot {
       }
     });
     visionThread.start();
-    m_robotDrive.setSafetyEnabled(false);
+    //m_robotDrive.setSafetyEnabled(false);
     super.robotInit();
   }
 
@@ -65,8 +65,8 @@ public class Robot extends TimedRobot {
     synchronized (imgLock) {
         centerX = this.centerX;
     }
-    System.out.println(centerX);
     if (centerX == 1024) {
+      System.out.println("Spinnin' like a record");
       m_robotDrive.arcadeDrive(0, 0.5);
     } else {
       double turn = centerX - (IMG_WIDTH / 2);
@@ -78,6 +78,7 @@ public class Robot extends TimedRobot {
       } else if (turn <= 0.5) {
         turn = 0.5;
       }
+      System.out.println(turn);
       m_robotDrive.arcadeDrive(0, turn);
     }
   }
@@ -87,6 +88,6 @@ public class Robot extends TimedRobot {
     synchronized (imgLock) {
       System.out.println(this.centerX);
     }
-    m_robotDrive.arcadeDrive(m_stick.getY(), m_stick.getX());
+    m_robotDrive.arcadeDrive(m_stick.getY()*0.75, m_stick.getX()*0.75);
   }
 }
