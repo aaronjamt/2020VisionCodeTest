@@ -29,7 +29,7 @@ public class Robot extends TimedRobot {
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftSpark, m_rightSpark); // Combined motor
                                                                                                    // control
   private final Joystick m_stick = new Joystick(0); // Primary joystick/controller
-  private Ultrasonic ultrasonic = new Ultrasonic(1, 0); // Ultrasonic sensor
+  //private Ultrasonic ultrasonic = new Ultrasonic(1, 0); // Ultrasonic sensor
 
   private static final int IMG_WIDTH = 160; // Vision image width(pixels)
   private static final int IMG_HEIGHT = 120; // Vision image height(pixels)
@@ -39,9 +39,9 @@ public class Robot extends TimedRobot {
 
   private final Object imgLock = new Object(); // Syncronizes read/write calls from/to targetCenter
 
-  private final double visionPrecision = 0.025; // The lower this value, the more precise vision is. The higher the
-                                               // value, the less the robot "jitters" trying to find the "perfect"
-                                               // center
+  private final double visionPrecision = 0.030; // The lower this value, the more precise vision is. The higher the
+                                                // value, the less the robot "jitters" trying to find the "perfect"
+                                                // center
   private final double visionMinimumSpeed = 0.5; // The minimum speed at which the motors will start moving.
 
   private CvSource aimVideoSource; // Custom video feed sent to dashboard (shows R/Y/G indication)
@@ -61,7 +61,8 @@ public class Robot extends TimedRobot {
         synchronized (imgLock) { //Syncronizes read/write calls from/to targetCenter
           targetCenter = new Point(r.x + (r.width / 2), r.y + (r.height / 2)); // Sets targetCenter to center position of contour
           Mat aimMat = pipeline.resizeImageOutput();
-          
+          Imgproc.drawMarker(aimMat, new Point(IMG_WIDTH/2, IMG_HEIGHT/2), new Scalar(255, 255, 255), Imgproc.MARKER_CROSS, 5);
+     
           final double centerPrecision = 10;
 
           if (targetCenter.x >= (IMG_WIDTH/2)-centerPrecision && targetCenter.x <= (IMG_WIDTH/2)+centerPrecision && targetCenter.y >= (IMG_HEIGHT/2)-centerPrecision && targetCenter.y <= (IMG_HEIGHT/2)+centerPrecision) {
@@ -72,7 +73,6 @@ public class Robot extends TimedRobot {
           if (m_stick.getRawButton(5)) {
             Imgproc.arrowedLine(aimMat, new Point(IMG_WIDTH/2, IMG_HEIGHT/2), targetCenter, new Scalar(255, 0, 0), 1);
           }
-          Imgproc.drawMarker(aimMat, new Point(IMG_WIDTH/2, IMG_HEIGHT/2), new Scalar(255, 255, 255), Imgproc.MARKER_CROSS, 5);
           aimVideoSource.putFrame(aimMat);
         }
         
@@ -86,7 +86,7 @@ public class Robot extends TimedRobot {
       }
     });
     visionThread.start(); // Starts vision thread
-    ultrasonic.setAutomaticMode(true); // Sets ultrasonic sensor to "round-robin" mode - automatically updates all sensors
+    //ultrasonic.setAutomaticMode(true); // Sets ultrasonic sensor to "round-robin" mode - automatically updates all sensors
     super.robotInit(); // Initialize robot
   }
 
@@ -121,20 +121,36 @@ public class Robot extends TimedRobot {
       synchronized (imgLock) {
         targetCenter = this.targetCenter;
       }
-      if (targetCenter.x != 1024) {
+      if (targetCenter.x == 1024) {
+        m_robotDrive.arcadeDrive(0, 0);
+      } else {
         double turn = targetCenter.x  - (IMG_WIDTH / 2);
-        turn *= 0.004;
+        turn *= 0.008;
+        System.out.print("Turn (pre-limit): ");
+        System.out.print(turn);
         if (Math.abs(turn) <= visionPrecision) {
           turn = 0;
         } else if (turn < 0 && turn >= -visionMinimumSpeed) {
           turn = -visionMinimumSpeed;
-        } else if (turn <= visionMinimumSpeed) {
+        } else if (turn > 0 && turn <= visionMinimumSpeed) {
           turn = visionMinimumSpeed;
         }
+        System.out.print("; Turn (post-limit): ");
+        System.out.println(turn);
         m_robotDrive.arcadeDrive(0, turn);
       }
     } else {
-      m_robotDrive.arcadeDrive(m_stick.getY()*0.75, m_stick.getX()*0.75);
+      if (m_stick.getPOV() == 0) {
+        m_robotDrive.arcadeDrive(-0.5, 0);
+      } else if (m_stick.getPOV() == 90) {
+        m_robotDrive.arcadeDrive(0, 0.5);
+      } else if (m_stick.getPOV() == 180) {
+        m_robotDrive.arcadeDrive(0.5, 0);
+      } else if (m_stick.getPOV() == 270) {
+        m_robotDrive.arcadeDrive(0, -0.5);
+      } else {
+        m_robotDrive.arcadeDrive(m_stick.getY()*0.75, m_stick.getX()*0.75);
+      }
     }
     /*System.out.print(ultrasonic.getRangeMM());
     System.out.print(" MM ; ");
