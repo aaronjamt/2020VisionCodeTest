@@ -50,9 +50,9 @@ public class BallTargetVisionPipeline implements VisionPipeline {
 
 		// Step HSV_Threshold0:
 		Mat hsvThresholdInput = resizeImageOutput;
-		double[] hsvThresholdHue = {49.60431654676259, 84.88152411896596};
-		double[] hsvThresholdSaturation = {110.07194244604318, 255.0};
-		double[] hsvThresholdValue = {59.62230215827338, 255.0};
+		double[] hsvThresholdHue = {49.60431654676259, 97.06484641638225};
+		double[] hsvThresholdSaturation = {41.2769784172662, 255.0};
+		double[] hsvThresholdValue = {94.01978417266187, 255.0};
 		hsvThreshold(hsvThresholdInput, hsvThresholdHue, hsvThresholdSaturation, hsvThresholdValue, hsvThresholdOutput);
 
 		// Step Find_Contours0:
@@ -68,7 +68,7 @@ public class BallTargetVisionPipeline implements VisionPipeline {
 		double filterContoursMaxWidth = 1000.0;
 		double filterContoursMinHeight = 0.0;
 		double filterContoursMaxHeight = 1000.0;
-		double[] filterContoursSolidity = {0.0, 100};
+		double[] filterContoursSolidity = {0.0, 25.129087779690195};
 		double filterContoursMaxVertices = 1000000.0;
 		double filterContoursMinVertices = 0.0;
 		double filterContoursMinRatio = 1.0;
