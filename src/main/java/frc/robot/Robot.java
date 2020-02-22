@@ -20,6 +20,7 @@ import edu.wpi.first.vision.VisionThread;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 //import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
@@ -55,32 +56,40 @@ public class Robot extends TimedRobot {
     camera.setExposureManual(20); // Sets camera exposure low for more reliable vision processing
     camera.setBrightness(20);
     aimVideoSource = CameraServer.getInstance().putVideo("Aim Assistance", IMG_WIDTH, IMG_HEIGHT);
+    
+    final int crosshairSize = 10;
+    
     visionThread = new VisionThread(camera, new BallTargetVisionPipeline(), pipeline -> { // Initialize visionthread
-        Mat aimMat = pipeline.resizeImageOutput(); // Mat object from camera for Aim Assistance
-        if (!pipeline.filterContoursOutput().isEmpty()) { // Were any contours found by vision pipeline?
+      boolean rumble = false;
+      Mat aimMat = pipeline.resizeImageOutput(); // Mat object from camera for Aim Assistance
+      if (!pipeline.filterContoursOutput().isEmpty()) { // Were any contours found by vision pipeline?
         Rect r = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0)); // If so, get the bounding Rect of the first contour
         synchronized (imgLock) { //Syncronizes read/write calls from/to targetCenter
           targetCenter = new Point(r.x + (r.width / 2), r.y + (r.height / 2)); // Sets targetCenter to center position of contour
-          Imgproc.drawMarker(aimMat, new Point(IMG_WIDTH/2, IMG_HEIGHT/2), new Scalar(255, 255, 255), Imgproc.MARKER_CROSS, 5);
-     
+          Imgproc.drawMarker(aimMat, new Point(IMG_WIDTH/2, IMG_HEIGHT/2), new Scalar(255, 255, 255), Imgproc.MARKER_CROSS, crosshairSize);
           final double centerPrecision = 10;
 
-          if (targetCenter.x >= (IMG_WIDTH/2)-centerPrecision && targetCenter.x <= (IMG_WIDTH/2)+centerPrecision && targetCenter.y >= (IMG_HEIGHT/2)-centerPrecision && targetCenter.y <= (IMG_HEIGHT/2)+centerPrecision) {
-            Imgproc.drawMarker(aimMat, targetCenter, new Scalar(0, 255, 0), Imgproc.MARKER_CROSS, 5);
+          if (targetCenter.x >= (IMG_WIDTH/2)-centerPrecision && targetCenter.x <= (IMG_WIDTH/2)+centerPrecision/* && targetCenter.y >= (IMG_HEIGHT/2)-centerPrecision && targetCenter.y <= (IMG_HEIGHT/2)+centerPrecision*/) {
+            Imgproc.drawMarker(aimMat, targetCenter, new Scalar(0, 255, 0), Imgproc.MARKER_CROSS, crosshairSize);
+            rumble = true;
           } else {
-            Imgproc.drawMarker(aimMat, targetCenter, new Scalar(0, 255, 255), Imgproc.MARKER_CROSS, 5);
-          }
-          if (m_stick.getRawButton(5)) {
-            Imgproc.arrowedLine(aimMat, new Point(IMG_WIDTH/2, IMG_HEIGHT/2), targetCenter, new Scalar(255, 0, 0), 1);
+            Imgproc.drawMarker(aimMat, targetCenter, new Scalar(0, 255, 255), Imgproc.MARKER_CROSS, crosshairSize);
           }
         }
       } else { // No contours found
         synchronized (imgLock) { // Syncronizes read/write calls from/to targetCenter
           targetCenter = new Point(1024, 1024); // 1024 signifies "No Target"
-          Imgproc.drawMarker(aimMat, new Point((IMG_WIDTH/2), (IMG_HEIGHT/2)), new Scalar(0, 0, 255), Imgproc.MARKER_CROSS, 5);
+          Imgproc.drawMarker(aimMat, new Point((IMG_WIDTH/2), (IMG_HEIGHT/2)), new Scalar(0, 0, 255), Imgproc.MARKER_CROSS, crosshairSize);
         }
       }
       aimVideoSource.putFrame(aimMat); // Publish Aim Assistance to dashboard
+      if (rumble) {
+        m_stick.setRumble(RumbleType.kLeftRumble, 1);
+        m_stick.setRumble(RumbleType.kRightRumble, 1);
+      } else {
+        m_stick.setRumble(RumbleType.kLeftRumble, 0);
+        m_stick.setRumble(RumbleType.kRightRumble, 0);
+      }
     });
     visionThread.start(); // Starts vision thread
     //ultrasonic.setAutomaticMode(true); // Sets ultrasonic sensor to "round-robin" mode - automatically updates all sensors
