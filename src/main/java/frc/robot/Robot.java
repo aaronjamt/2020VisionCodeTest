@@ -20,7 +20,7 @@ import edu.wpi.first.vision.VisionThread;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Ultrasonic;
+//import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
 public class Robot extends TimedRobot {
@@ -39,7 +39,7 @@ public class Robot extends TimedRobot {
 
   private final Object imgLock = new Object(); // Syncronizes read/write calls from/to targetCenter
 
-  private final double visionPrecision = 0.030; // The lower this value, the more precise vision is. The higher the
+  private final double visionPrecision = 0.035; // The lower this value, the more precise vision is. The higher the
                                                 // value, the less the robot "jitters" trying to find the "perfect"
                                                 // center
   private final double visionMinimumSpeed = 0.5; // The minimum speed at which the motors will start moving.
@@ -56,11 +56,11 @@ public class Robot extends TimedRobot {
     camera.setBrightness(20);
     aimVideoSource = CameraServer.getInstance().putVideo("Aim Assistance", IMG_WIDTH, IMG_HEIGHT);
     visionThread = new VisionThread(camera, new BallTargetVisionPipeline(), pipeline -> { // Initialize visionthread
-      if (!pipeline.filterContoursOutput().isEmpty()) { // Were any contours found by vision pipeline?
+        Mat aimMat = pipeline.resizeImageOutput(); // Mat object from camera for Aim Assistance
+        if (!pipeline.filterContoursOutput().isEmpty()) { // Were any contours found by vision pipeline?
         Rect r = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0)); // If so, get the bounding Rect of the first contour
         synchronized (imgLock) { //Syncronizes read/write calls from/to targetCenter
           targetCenter = new Point(r.x + (r.width / 2), r.y + (r.height / 2)); // Sets targetCenter to center position of contour
-          Mat aimMat = pipeline.resizeImageOutput();
           Imgproc.drawMarker(aimMat, new Point(IMG_WIDTH/2, IMG_HEIGHT/2), new Scalar(255, 255, 255), Imgproc.MARKER_CROSS, 5);
      
           final double centerPrecision = 10;
@@ -73,17 +73,14 @@ public class Robot extends TimedRobot {
           if (m_stick.getRawButton(5)) {
             Imgproc.arrowedLine(aimMat, new Point(IMG_WIDTH/2, IMG_HEIGHT/2), targetCenter, new Scalar(255, 0, 0), 1);
           }
-          aimVideoSource.putFrame(aimMat);
         }
-        
       } else { // No contours found
         synchronized (imgLock) { // Syncronizes read/write calls from/to targetCenter
           targetCenter = new Point(1024, 1024); // 1024 signifies "No Target"
-          Mat aimMat = pipeline.resizeImageOutput();
           Imgproc.drawMarker(aimMat, new Point((IMG_WIDTH/2), (IMG_HEIGHT/2)), new Scalar(0, 0, 255), Imgproc.MARKER_CROSS, 5);
-          aimVideoSource.putFrame(aimMat);
         }
       }
+      aimVideoSource.putFrame(aimMat); // Publish Aim Assistance to dashboard
     });
     visionThread.start(); // Starts vision thread
     //ultrasonic.setAutomaticMode(true); // Sets ultrasonic sensor to "round-robin" mode - automatically updates all sensors
