@@ -53,8 +53,11 @@ public class Robot extends TimedRobot {
     UsbCamera camera = CameraServer.getInstance().startAutomaticCapture(); // Starts capture from camera, streams to
                                                                            // dashboard and vision code
     camera.setResolution(IMG_WIDTH, IMG_HEIGHT); // Sets camera resolution
+    
     camera.setExposureManual(20); // Sets camera exposure low for more reliable vision processing
     camera.setBrightness(20);
+    camera.setConfigJson("{\"properties\": [{\"name\": \"raw_exposure_absolute\", \"value\": 20}]}");
+    System.out.println(camera.getConfigJson());
     aimVideoSource = CameraServer.getInstance().putVideo("Aim Assistance", IMG_WIDTH, IMG_HEIGHT);
     
     final int crosshairSize = 10;
